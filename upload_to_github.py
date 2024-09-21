@@ -14,6 +14,7 @@ def get_git_info():
     """获取并返回所有 Git 信息，组成一个大的表格。"""
     table = tt.Texttable()
     table.set_deco(tt.Texttable.HEADER | tt.Texttable.VLINES | tt.Texttable.HLINES)
+    table.set_chars(['-', '|', '+', '='])  # 设置边框样式
     table.set_cols_align(["l", "l"])
     table.set_cols_valign(["m", "m"])
     table.set_cols_width([25, 75])
@@ -98,9 +99,11 @@ def git_update(commit_message):
     if push_error:
         print(f"\n推送失败：{push_error}")
         print("\n请检查错误信息，确保远程仓库配置正确。")
-    else:
+    elif push_result:
         print("\n推送成功！详细信息如下：")
         print(push_result)
+    else:
+        print("\n推送成功！但没有返回任何详细信息。")
 
 
 if __name__ == "__main__":
