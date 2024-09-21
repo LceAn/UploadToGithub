@@ -10,55 +10,62 @@ def run_command(command):
     return result.stdout.strip(), None
 
 
-def format_status_output(status_output):
-    """格式化 git status 的输出信息为表格样式。"""
+def get_git_info():
+    """获取并返回所有 Git 信息，组成一个大的表格。"""
     table = tt.Texttable()
-    table.set_deco(tt.Texttable.HEADER)
+    table.set_deco(tt.Texttable.HEADER | tt.Texttable.VLINES | tt.Texttable.HLINES)
     table.set_cols_align(["l", "l"])
     table.set_cols_valign(["m", "m"])
-    table.set_cols_width([25, 60])
-    table.header(["状态", "文件/目录"])
+    table.set_cols_width([25, 75])
+    table.header(["项", "状态"])
 
-    status_section = None
-    for line in status_output.splitlines():
+    # Git 版本
+    git_version, _ = run_command("git --version")
+    table.add_row(["Git 版本", git_version])
+
+    # Git 状态信息
+    git_status, _ = run_command("git status")
+    status_lines = git_status.splitlines()
+    current_section = None
+    for line in status_lines:
         line = line.strip()
-        if line.startswith("Changes to be committed:"):
-            status_section = "暂存区的更改"
+        if line.startswith("On branch"):
+            current_section = "当前分支"
+            table.add_row([current_section, line])
+        elif line.startswith("Your branch"):
+            current_section = "分支状态"
+            table.add_row([current_section, line])
+        elif line.startswith("Changes to be committed:"):
+            current_section = "暂存区的更改"
         elif line.startswith("Changes not staged for commit:"):
-            status_section = "未暂存的更改"
+            current_section = "未暂存的更改"
         elif line.startswith("Untracked files:"):
-            status_section = "未跟踪的文件"
+            current_section = "未跟踪的文件"
         elif line.startswith("(use "):
-            continue  # 跳过提示信息
-        elif status_section and line:
-            if line.startswith("new file:") or line.startswith("modified:"):
-                parts = line.split(":", 1)
-                table.add_row([status_section, parts[1].strip()])
-            else:
-                table.add_row([status_section, line])
+            continue
+        elif line and current_section:
+            table.add_row([current_section, line])
+
+    # 用户名和邮箱
+    user_name, _ = run_command("git config user.name")
+    user_email, _ = run_command("git config user.email")
+    table.add_row(["当前Git用户名", user_name])
+    table.add_row(["当前Git用户邮箱", user_email])
+
+    # 检查当前暂存区的内容
+    staged_files, _ = run_command("git diff --cached --name-only")
+    staged_files = staged_files.splitlines() if staged_files else ["暂存区中没有文件。"]
+    table.add_row(["暂存区中的文件", "\n".join(staged_files)])
+
+    # 远程仓库信息
+    remote_info, _ = run_command("git remote -v")
+    table.add_row(["远程仓库信息", remote_info])
 
     return table.draw()
 
 
-def check_git_status(full_status=True):
-    """检查当前Git仓库的状态信息。"""
-    # 检查Git版本
-    git_version, _ = run_command("git --version")
-    print(f"Git 版本: {git_version}")
-
-    # 检查当前的Git状态
-    git_status, _ = run_command("git status")
-    print("\n当前Git状态:")
-    if full_status:
-        print(format_status_output(git_status))
-
-    # 检查当前用户的配置信息
-    user_name, _ = run_command("git config user.name")
-    user_email, _ = run_command("git config user.email")
-    print(f"\n当前Git用户名: {user_name}")
-    print(f"当前Git用户邮箱: {user_email}")
-
-    # 检查当前暂存区的内容
+def check_staged_files():
+    """只检查暂存区文件并显示。"""
     staged_files, _ = run_command("git diff --cached --name-only")
     if staged_files:
         print("\n暂存区中的文件:")
@@ -66,11 +73,6 @@ def check_git_status(full_status=True):
             print(f"- {file}")
     else:
         print("暂存区中没有文件。")
-
-    # 检查远程仓库信息
-    remote_info, _ = run_command("git remote -v")
-    print("\n远程仓库信息:")
-    print(remote_info)
 
 
 def git_update(commit_message):
@@ -87,13 +89,8 @@ def git_update(commit_message):
         return
 
     # 显示提交后的暂存区状态
-    staged_files, _ = run_command("git diff --cached --name-only")
-    if staged_files:
-        print("\n已提交的文件:")
-        for file in staged_files.splitlines():
-            print(f"- {file}")
-    else:
-        print("暂存区中没有文件。")
+    print("\n提交后的暂存区文件:")
+    check_staged_files()
 
     # 推送更改
     print("\n正在推送更改到远程仓库...")
@@ -107,14 +104,15 @@ def git_update(commit_message):
 
 
 if __name__ == "__main__":
-    # 先检查当前Git状态（全量显示）
-    check_git_status(full_status=True)
+    # 打印所有Git信息
+    git_info = get_git_info()
+    print(git_info)
 
     # 提交更改
     commit_message = input("\n请输入提交信息：")
 
-    # 检查当前暂存区状态（仅显示暂存文件）
-    check_git_status(full_status=False)
+    # 只显示暂存区文件状态（避免重复输出所有状态信息）
+    check_staged_files()
 
     # 提交并推送更改
     git_update(commit_message)
