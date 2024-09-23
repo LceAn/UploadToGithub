@@ -1,5 +1,5 @@
 import subprocess
-from prettytable import PrettyTable  # 引入 PrettyTable 库美化表格（需要：pip install prettytable）
+from prettytable import PrettyTable
 
 
 def run_command(command):
@@ -16,9 +16,13 @@ def get_git_info():
     table.field_names = ["项", "状态"]
     table.align["项"] = "l"  # 左对齐
     table.align["状态"] = "l"  # 左对齐
+    table.max_width = 70  # 设置列的最大宽度
     table.border = True
     table.header = True
     table.hrules = 1  # 显示行规则
+    table.vertical_char = '┃'
+    table.horizontal_char = '━'
+    table.junction_char = '╋'
 
     # Git 版本
     git_version, _ = run_command("git --version")
@@ -60,7 +64,8 @@ def get_git_info():
 
     # 远程仓库信息
     remote_info, _ = run_command("git remote -v")
-    table.add_row(["远程仓库信息", remote_info])
+    formatted_remote_info = remote_info.replace('\t', ' ')
+    table.add_row(["远程仓库信息", formatted_remote_info])
 
     return table
 
