@@ -13,34 +13,32 @@ def run_command(command):
 def get_git_info():
     """获取并返回所有 Git 信息，组成一个大的表格。"""
     table = PrettyTable()
+    table.title = "Git 仓库信息汇总"
     table.field_names = ["项", "状态"]
     table.align["项"] = "l"  # 左对齐
     table.align["状态"] = "l"  # 左对齐
-    table.max_width = 70  # 设置列的最大宽度
-    table.border = True
+    table.max_width = 60  # 设置列的最大宽度，适当减少列宽避免过长内容
     table.header = True
-    table.hrules = 1  # 显示行规则
-    table.vertical_char = '┃'
-    table.horizontal_char = '━'
-    table.junction_char = '╋'
 
     # Git 版本
     git_version, _ = run_command("git --version")
     table.add_row(["Git 版本", git_version])
 
     # Git 状态信息
-    git_status, _ = run_command("git status")
-    status_lines = git_status.splitlines()
+    git_status, _ = run_command("git status --short --branch")
+    table.add_row(["当前状态", git_status])
+
+    # 获取详细的状态信息
+    git_detailed_status, _ = run_command("git status")
     current_section = None
-    for line in status_lines:
+    detailed_lines = git_detailed_status.splitlines()
+    changes_to_commit = []
+    changes_not_staged = []
+    untracked_files = []
+
+    for line in detailed_lines:
         line = line.strip()
-        if line.startswith("On branch"):
-            current_section = "当前分支"
-            table.add_row([current_section, line])
-        elif line.startswith("Your branch"):
-            current_section = "分支状态"
-            table.add_row([current_section, line])
-        elif line.startswith("Changes to be committed:"):
+        if line.startswith("Changes to be committed:"):
             current_section = "暂存区的更改"
         elif line.startswith("Changes not staged for commit:"):
             current_section = "未暂存的更改"
@@ -48,8 +46,21 @@ def get_git_info():
             current_section = "未跟踪的文件"
         elif line.startswith("(use "):
             continue
-        elif line and current_section:
-            table.add_row([current_section, line])
+        elif current_section and line:
+            if current_section == "暂存区的更改":
+                changes_to_commit.append(line)
+            elif current_section == "未暂存的更改":
+                changes_not_staged.append(line)
+            elif current_section == "未跟踪的文件":
+                untracked_files.append(line)
+
+    # 合并详细状态信息
+    if changes_to_commit:
+        table.add_row(["暂存区的更改", "\n".join(changes_to_commit)])
+    if changes_not_staged:
+        table.add_row(["未暂存的更改", "\n".join(changes_not_staged)])
+    if untracked_files:
+        table.add_row(["未跟踪的文件", "\n".join(untracked_files)])
 
     # 用户名和邮箱
     user_name, _ = run_command("git config user.name")
