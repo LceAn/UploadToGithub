@@ -15,6 +15,37 @@ def print_divider(symbol="━", length=60):
     print(symbol * length)
 
 
+def check_git_login():
+    """检查Git是否登录，未登录则退出脚本"""
+    user_name, error = run_command("git config user.name")
+    user_email, error = run_command("git config user.email")
+    if not user_name or not user_email:
+        print("[✘] Git 未配置用户名或邮箱，请先配置后再运行脚本。")
+        print("    示例：git config --global user.name \"Your Name\"")
+        print("          git config --global user.email \"youremail@example.com\"")
+        exit(1)
+    print(f"[✔] Git 已登录：{user_name} <{user_email}>")
+
+
+def check_git_repository():
+    """检查当前目录是否是Git仓库"""
+    git_dir, error = run_command("git rev-parse --is-inside-work-tree")
+    if error:
+        print("[✘] 当前目录不是一个Git仓库，请先初始化仓库或切换到Git仓库目录后再运行脚本。")
+        exit(1)
+    print("[✔] 当前目录是Git仓库。")
+
+
+def check_remote_repository():
+    """检查是否存在远程仓库配置"""
+    remotes, error = run_command("git remote -v")
+    if not remotes:
+        print("[✘] 当前Git仓库没有配置远程仓库，请先添加远程仓库再运行脚本。")
+        print("    示例：git remote add origin https://github.com/user/repo.git")
+        exit(1)
+    print("[✔] 远程仓库配置检查通过。")
+
+
 def get_git_info():
     """获取并返回所有 Git 信息，组成一个大的表格。"""
     table = PrettyTable()
@@ -133,6 +164,15 @@ def git_update(commit_message):
 
 
 if __name__ == "__main__":
+    # 检查是否已登录Git
+    check_git_login()
+
+    # 检查是否在Git仓库中
+    check_git_repository()
+
+    # 检查是否存在远程仓库配置
+    check_remote_repository()
+
     # 打印所有Git信息
     print_divider()
     git_info_table = get_git_info()
@@ -140,7 +180,10 @@ if __name__ == "__main__":
     print_divider()
 
     # 提交更改
-    commit_message = input("\n请输入提交信息：")
+    commit_message = input("\n请输入提交信息（输入q退出）：")
+    if commit_message.lower() == 'q':
+        print("[ℹ] 已退出脚本。")
+        exit(0)
 
     # 只显示暂存区文件状态（避免重复输出所有状态信息）
     check_staged_files()
