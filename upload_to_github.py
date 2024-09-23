@@ -10,6 +10,11 @@ def run_command(command):
     return result.stdout.strip(), None
 
 
+def print_divider(symbol="━", length=60):
+    """打印分隔线"""
+    print(symbol * length)
+
+
 def get_git_info():
     """获取并返回所有 Git 信息，组成一个大的表格。"""
     table = PrettyTable()
@@ -17,7 +22,7 @@ def get_git_info():
     table.field_names = ["项", "状态"]
     table.align["项"] = "l"  # 左对齐
     table.align["状态"] = "l"  # 左对齐
-    table.max_width = 60  # 设置列的最大宽度，适当减少列宽避免过长内容
+    table.max_width = 60  # 设置列的最大宽度
     table.header = True
 
     # Git 版本
@@ -84,48 +89,55 @@ def get_git_info():
 def check_staged_files():
     """只检查暂存区文件并显示。"""
     staged_files, _ = run_command("git diff --cached --name-only")
+    print_divider("-", 40)
+    print("暂存区中的文件：")
     if staged_files:
-        print("\n暂存区中的文件:")
         for file in staged_files.splitlines():
-            print(f"- {file}")
+            print(f"  [✔] {file}")
     else:
-        print("暂存区中没有文件。")
+        print("  [✘] 暂存区中没有文件。")
 
 
 def git_update(commit_message):
     """添加、提交并推送更改到GitHub仓库。"""
     # 添加所有更改
-    print("\n正在添加所有更改...")
+    print_divider("-", 40)
+    print("[ℹ] 正在添加所有更改...")
     run_command("git add .")
 
     # 提交更改
-    print(f"\n正在提交更改，提交信息：{commit_message}")
+    print_divider("-", 40)
+    print(f"[ℹ] 正在提交更改，提交信息：{commit_message}")
     commit_result, commit_error = run_command(f"git commit -m \"{commit_message}\"")
     if commit_error:
-        print(f"\n提交失败：{commit_error}")
+        print(f"[✘] 提交失败：{commit_error}")
         return
 
     # 显示提交后的暂存区状态
-    print("\n提交后的暂存区文件:")
+    print_divider("-", 40)
+    print("提交后的暂存区文件：")
     check_staged_files()
 
     # 推送更改
-    print("\n正在推送更改到远程仓库...")
+    print_divider("-", 40)
+    print("[ℹ] 正在推送更改到远程仓库...")
     push_result, push_error = run_command("git push")
     if push_error:
-        print(f"\n推送失败：{push_error}")
-        print("\n请检查错误信息，确保远程仓库配置正确。")
+        print(f"[✘] 推送失败：{push_error}")
+        print("[✘] 请检查错误信息，确保远程仓库配置正确。")
     elif push_result:
-        print("\n推送成功！详细信息如下：")
+        print("[✔] 推送成功！详细信息如下：")
         print(push_result)
     else:
-        print("\n推送成功！但没有返回任何详细信息。")
+        print("[✔] 推送成功！但没有返回任何详细信息。")
 
 
 if __name__ == "__main__":
     # 打印所有Git信息
+    print_divider()
     git_info_table = get_git_info()
     print(git_info_table)
+    print_divider()
 
     # 提交更改
     commit_message = input("\n请输入提交信息：")
@@ -135,3 +147,4 @@ if __name__ == "__main__":
 
     # 提交并推送更改
     git_update(commit_message)
+    print_divider()
