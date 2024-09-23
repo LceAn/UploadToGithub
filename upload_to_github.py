@@ -1,5 +1,5 @@
 import subprocess
-import texttable as tt  # 引入 texttable 库来生成表格（需要：pip install texttable）
+from prettytable import PrettyTable  # 引入 PrettyTable 库美化表格（需要：pip install prettytable）
 
 
 def run_command(command):
@@ -12,13 +12,13 @@ def run_command(command):
 
 def get_git_info():
     """获取并返回所有 Git 信息，组成一个大的表格。"""
-    table = tt.Texttable()
-    table.set_deco(tt.Texttable.HEADER | tt.Texttable.VLINES | tt.Texttable.HLINES)
-    table.set_chars(['-', '|', '+', '='])  # 设置边框样式
-    table.set_cols_align(["l", "l"])
-    table.set_cols_valign(["m", "m"])
-    table.set_cols_width([25, 75])
-    table.header(["项", "状态"])
+    table = PrettyTable()
+    table.field_names = ["项", "状态"]
+    table.align["项"] = "l"  # 左对齐
+    table.align["状态"] = "l"  # 左对齐
+    table.border = True
+    table.header = True
+    table.hrules = 1  # 显示行规则
 
     # Git 版本
     git_version, _ = run_command("git --version")
@@ -62,7 +62,7 @@ def get_git_info():
     remote_info, _ = run_command("git remote -v")
     table.add_row(["远程仓库信息", remote_info])
 
-    return table.draw()
+    return table
 
 
 def check_staged_files():
@@ -108,8 +108,8 @@ def git_update(commit_message):
 
 if __name__ == "__main__":
     # 打印所有Git信息
-    git_info = get_git_info()
-    print(git_info)
+    git_info_table = get_git_info()
+    print(git_info_table)
 
     # 提交更改
     commit_message = input("\n请输入提交信息：")
