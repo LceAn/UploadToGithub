@@ -129,12 +129,16 @@ def check_staged_files():
         print("  [✘] 暂存区中没有文件。")
 
 
-def git_update(commit_message):
+def git_update(commit_message, upload_all):
     """添加、提交并推送更改到GitHub仓库。"""
-    # 添加所有更改
+    # 添加更改
     print_divider("-", 40)
-    print("[ℹ] 正在添加所有更改...")
-    run_command("git add .")
+    if upload_all:
+        print("[ℹ] 正在添加所有文件（包括删除的文件）...")
+        run_command("git add -A")
+    else:
+        print("[ℹ] 正在添加变更文件...")
+        run_command("git add .")
 
     # 提交更改
     print_divider("-", 40)
@@ -179,6 +183,13 @@ if __name__ == "__main__":
     print(git_info_table)
     print_divider()
 
+    # 选择上传类型
+    upload_choice = input("\n请选择上传类型（1：仅上传变更文件，2：上传全部文件，包括删除的文件）：")
+    if upload_choice == '2':
+        upload_all = True
+    else:
+        upload_all = False
+
     # 提交更改
     commit_message = input("\n请输入提交信息（输入q退出）：")
     if commit_message.lower() == 'q':
@@ -189,5 +200,5 @@ if __name__ == "__main__":
     check_staged_files()
 
     # 提交并推送更改
-    git_update(commit_message)
+    git_update(commit_message, upload_all)
     print_divider()
