@@ -25,7 +25,7 @@ class Config:
     # 本地版本信息
     local_version = 'v1.0.0'
     version_info = f"{white}{{{red}{local_version} #dev{white}}}"
-    repo_api_url = "https://api.github.com/repos/你的用户名/你的仓库名/releases/latest"
+    repo_api_url = "https://api.github.com/repos/LceAn/UploadToGithub/releases/latest"
 
     @staticmethod
     def generate_titles(script_function, script_name, author):
@@ -33,12 +33,13 @@ class Config:
         return f"""
         功能：{script_function}
 {Config.yellow}
- ____             _ __        ___ _   _         ___ ____      
-|  _ \  ___  __ _| |\ \      / (_) |_| |__     |_ _|  _ \ ___ 
-| | | |/ _ \/ _` | | \ \ /\ / /| | __| '_ \     | || |_) / __|{Config.green}
-| |_| |  __/ (_| | |  \ V  V / | | |_| | | |    | ||  __/\__ \\
-|____/ \___|\__,_|_|___\_/\_/  |_|\__|_| |_|___|___|_|   |___/{Config.white}
-                  |_____|                 |_____|     By {Config.version_info}
+ _   _       _                 _   _____        ____ _ _   _           _     
+| | | |_ __ | | ___   __ _  __| | |_   _|__    / ___(_) |_| |__  _   _| |__  
+| | | | '_ \| |/ _ \ / _` |/ _` |   | |/ _ \  | |  _| | __| '_ \| | | | '_ \ {Config.green}
+| |_| | |_) | | (_) | (_| | (_| |   | | (_) | | |_| | | |_| | | | |_| | |_) |
+ \___/| .__/|_|\___/ \__,_|\__,_|___|_|\___/___\____|_|\__|_| |_|\__,_|_.__/ {Config.white}
+      |_|                      |_____|    |_____|                     By {Config.version_info}       
+
     作者：{author}
     脚本名称：{script_name}
     内部版本，请勿泄漏
