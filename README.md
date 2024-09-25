@@ -33,15 +33,15 @@
    ```
    如果没有远程仓库配置，可以通过以下命令添加：
    ```bash
-   git remote add origin https://github.com/user/repo.git
+   git remote add origin https://github.com/LceAn/UploadToGithub.git
    ```
 
 ### 使用步骤
 
 1. **克隆或进入本地 Git 仓库**：
    ```bash
-   git clone https://github.com/user/repo.git
-   cd repo
+   git clone [https://github.com/user/repo.git](https://github.com/LceAn/UploadToGithub.git)
+   cd UploadToGithub
    ```
    
 2. **运行脚本**：
@@ -117,7 +117,7 @@ $ python3 upload_to_github.py
    - 错误信息：`[✘] 当前Git仓库没有配置远程仓库，请先添加远程仓库再运行脚本。`
    - 解决方法：添加远程仓库：
      ```bash
-     git remote add origin https://github.com/user/repo.git
+     git remote add origin https://github.com/LceAn/UploadToGithub.git
      ```
 
 ## 版本历史
