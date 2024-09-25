@@ -1,5 +1,92 @@
+# -*- coding: utf-8 -*-
+# @Time : 2024/9/23 下午4:52
+# @Author : LceAn
+# @File : upload_to_github.py
+# @Software : PyCharm
+
 import subprocess
+import requests
 from prettytable import PrettyTable
+from colorama import Fore, Style, init
+
+# 初始化 colorama（只在 Windows 上需要）
+init(autoreset=True)
+
+
+class Config:
+    # 颜色和版本信息（使用 colorama 提供的颜色定义）
+    yellow = Fore.YELLOW
+    white = Fore.WHITE
+    green = Fore.GREEN
+    blue = Fore.BLUE
+    red = Fore.RED
+    end = Style.RESET_ALL
+
+    # 本地版本信息
+    local_version = 'v1.0.0'
+    version_info = f"{white}{{{red}{local_version} #dev{white}}}"
+    repo_api_url = "https://api.github.com/repos/你的用户名/你的仓库名/releases/latest"
+
+    @staticmethod
+    def generate_titles(script_function, script_name, author):
+        """生成标题信息"""
+        return f"""
+        功能：{script_function}
+{Config.yellow}
+ ____             _ __        ___ _   _         ___ ____      
+|  _ \  ___  __ _| |\ \      / (_) |_| |__     |_ _|  _ \ ___ 
+| | | |/ _ \/ _` | | \ \ /\ / /| | __| '_ \     | || |_) / __|{Config.green}
+| |_| |  __/ (_| | |  \ V  V / | | |_| | | |    | ||  __/\__ \\
+|____/ \___|\__,_|_|___\_/\_/  |_|\__|_| |_|___|___|_|   |___/{Config.white}
+                  |_____|                 |_____|     By {Config.version_info}
+    作者：{author}
+    脚本名称：{script_name}
+    内部版本，请勿泄漏
+    {Config.red}本脚本正在开发中，请在每次使用前更新！{Config.end}
+    """
+
+    @staticmethod
+    def print_status(message, status_type='info'):
+        """打印带颜色和状态的消息信息"""
+        if status_type == 'info':
+            prefix = '[ + ]'
+            color = Config.green
+        elif status_type == 'warning':
+            prefix = '[ ! ]'
+            color = Config.yellow
+        elif status_type == 'error':
+            prefix = '[ - ]'
+            color = Config.red
+        else:
+            prefix = '[ * ]'
+            color = Config.white
+
+        print(f"{color}{prefix} {message}{Config.end}")
+
+    @staticmethod
+    def get_latest_version():
+        """从GitHub获取最新版本号"""
+        try:
+            response = requests.get(Config.repo_api_url)
+            if response.status_code == 200:
+                latest_version = response.json()["tag_name"]
+                return latest_version
+            else:
+                Config.print_status("无法从GitHub获取版本信息", "warning")
+                return None
+        except requests.exceptions.RequestException as e:
+            Config.print_status(f"请求失败: {e}", "error")
+            return None
+
+    @staticmethod
+    def check_for_updates():
+        """检查是否有新版本"""
+        latest_version = Config.get_latest_version()
+        if latest_version:
+            if Config.local_version < latest_version:
+                Config.print_status(f"有新版本可用: {latest_version}，请及时更新！", "warning")
+            else:
+                Config.print_status("当前版本已是最新版本。", "info")
 
 
 def run_command(command):
@@ -20,30 +107,30 @@ def check_git_login():
     user_name, error = run_command("git config user.name")
     user_email, error = run_command("git config user.email")
     if not user_name or not user_email:
-        print("[✘] Git 未配置用户名或邮箱，请先配置后再运行脚本。")
-        print("    示例：git config --global user.name \"Your Name\"")
-        print("          git config --global user.email \"youremail@example.com\"")
+        Config.print_status("Git 未配置用户名或邮箱，请先配置后再运行脚本。", "error")
+        Config.print_status("示例：git config --global user.name \"Your Name\"", "error")
+        Config.print_status("      git config --global user.email \"youremail@example.com\"", "error")
         exit(1)
-    print(f"[✔] Git 已登录：{user_name} <{user_email}>")
+    Config.print_status(f"Git 已登录：{user_name} <{user_email}>", "info")
 
 
 def check_git_repository():
     """检查当前目录是否是Git仓库"""
     git_dir, error = run_command("git rev-parse --is-inside-work-tree")
     if error:
-        print("[✘] 当前目录不是一个Git仓库，请先初始化仓库或切换到Git仓库目录后再运行脚本。")
+        Config.print_status("当前目录不是一个Git仓库，请先初始化仓库或切换到Git仓库目录后再运行脚本。", "error")
         exit(1)
-    print("[✔] 当前目录是Git仓库。")
+    Config.print_status("当前目录是Git仓库。", "info")
 
 
 def check_remote_repository():
     """检查是否存在远程仓库配置"""
     remotes, error = run_command("git remote -v")
     if not remotes:
-        print("[✘] 当前Git仓库没有配置远程仓库，请先添加远程仓库再运行脚本。")
-        print("    示例：git remote add origin https://github.com/user/repo.git")
+        Config.print_status("当前Git仓库没有配置远程仓库，请先添加远程仓库再运行脚本。", "error")
+        Config.print_status("示例：git remote add origin https://github.com/user/repo.git", "error")
         exit(1)
-    print("[✔] 远程仓库配置检查通过。")
+    Config.print_status("远程仓库配置检查通过。", "info")
 
 
 def get_git_info():
@@ -134,18 +221,18 @@ def git_update(commit_message, upload_all):
     # 添加更改
     print_divider("-", 40)
     if upload_all:
-        print("[ℹ] 正在添加所有文件（包括删除的文件）...")
+        Config.print_status("正在添加所有文件（包括删除的文件）...", "info")
         run_command("git add -A")
     else:
-        print("[ℹ] 正在添加变更文件...")
+        Config.print_status("正在添加变更文件...", "info")
         run_command("git add .")
 
     # 提交更改
     print_divider("-", 40)
-    print(f"[ℹ] 正在提交更改，提交信息：{commit_message}")
+    Config.print_status(f"正在提交更改，提交信息：{commit_message}", "info")
     commit_result, commit_error = run_command(f"git commit -m \"{commit_message}\"")
     if commit_error:
-        print(f"[✘] 提交失败：{commit_error}")
+        Config.print_status(f"提交失败：{commit_error}", "error")
         return
 
     # 获取提交的文件数量
@@ -160,60 +247,74 @@ def git_update(commit_message, upload_all):
 
     # 推送更改
     print_divider("-", 40)
-    print("[ℹ] 正在推送更改到远程仓库...")
+    Config.print_status("正在推送更改到远程仓库...", "info")
     push_result, push_error = run_command("git push")
     if push_error:
-        print(f"[✘] 推送失败：{push_error}")
-        print("[✘] 请检查错误信息，确保远程仓库配置正确。")
+        Config.print_status(f"推送失败：{push_error}", "error")
+        Config.print_status("请检查错误信息，确保远程仓库配置正确。", "error")
     elif push_result:
-        print("[✔] 推送成功！详细信息如下：")
+        Config.print_status("推送成功！详细信息如下：", "info")
         print(push_result)
 
         # 显示最近一次提交的详细信息
         latest_commit_info, _ = run_command("git log -1 --stat")
         if latest_commit_info:
-            print("[ℹ] 最近一次提交的详细信息：")
+            Config.print_status("最近一次提交的详细信息：", "info")
             print(latest_commit_info)
         else:
-            print("[ℹ] 无法获取最近一次提交的详细信息。")
+            Config.print_status("无法获取最近一次提交的详细信息。", "warning")
 
-        print(f"[ℹ] 本次提交包含的文件数量：{committed_files_count} 个")
+        Config.print_status(f"本次提交包含的文件数量：{committed_files_count} 个", "info")
     else:
-        print("[✔] 推送成功！但没有返回任何详细信息。")
+        Config.print_status("推送成功！但没有返回任何详细信息。", "info")
 
 
 if __name__ == "__main__":
-    # 检查是否已登录Git
-    check_git_login()
+    try:
+        # 初始化占位符内容
+        script_function = "Git 操作自动化脚本"
+        script_name = "upload_to_github.py"
+        author = "LceAn"
 
-    # 检查是否在Git仓库中
-    check_git_repository()
+        # 打印脚本标题信息，传递三个参数
+        print(Config.generate_titles(script_function, script_name, author))
 
-    # 检查是否存在远程仓库配置
-    check_remote_repository()
+        # 检查更新
+        Config.check_for_updates()
 
-    # 打印所有Git信息
-    print_divider()
-    git_info_table = get_git_info()
-    print(git_info_table)
-    print_divider()
+        # 检查是否已登录Git
+        check_git_login()
 
-    # 选择上传类型
-    upload_choice = input("\n请选择上传类型（1：仅上传变更文件，2：上传全部文件，包括删除的文件）：")
-    if upload_choice == '2':
-        upload_all = True
-    else:
-        upload_all = False
+        # 检查是否在Git仓库中
+        check_git_repository()
 
-    # 提交更改
-    commit_message = input("\n请输入提交信息（输入q退出）：")
-    if commit_message.lower() == 'q':
-        print("[ℹ] 已退出脚本。")
-        exit(0)
+        # 检查是否存在远程仓库配置
+        check_remote_repository()
 
-    # 只显示暂存区文件状态（避免重复输出所有状态信息）
-    check_staged_files()
+        # 打印所有Git信息
+        print_divider()
+        git_info_table = get_git_info()
+        print(git_info_table)
+        print_divider()
 
-    # 提交并推送更改
-    git_update(commit_message, upload_all)
-    print_divider()
+        # 选择上传类型
+        upload_choice = input("\n请选择上传类型（1：仅上传变更文件，2：上传全部文件，包括删除的文件）：")
+        if upload_choice == '2':
+            upload_all = True
+        else:
+            upload_all = False
+
+        # 提交更改
+        commit_message = input("\n请输入提交信息（输入q退出）：")
+        if commit_message.lower() == 'q':
+            Config.print_status("已退出脚本。", "info")
+            exit(0)
+
+        # 只显示暂存区文件状态（避免重复输出所有状态信息）
+        check_staged_files()
+
+        # 提交并推送更改
+        git_update(commit_message, upload_all)
+        print_divider()
+    except Exception as e:
+        Config.print_status(f"发生严重错误，程序终止: {e}", 'error')
