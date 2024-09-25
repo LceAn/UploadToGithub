@@ -23,7 +23,7 @@ class Config:
     end = Style.RESET_ALL
 
     # 本地版本信息
-    local_version = 'v1.0.0'
+    local_version = 'v1.1.0'
     version_info = f"{white}{{{red}{local_version} #dev{white}}}"
     repo_api_url = "https://api.github.com/repos/LceAn/UploadToGithub/releases/latest"
 
