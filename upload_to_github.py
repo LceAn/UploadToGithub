@@ -168,6 +168,15 @@ def git_update(commit_message, upload_all):
     elif push_result:
         print("[✔] 推送成功！详细信息如下：")
         print(push_result)
+
+        # 显示最近一次提交的详细信息
+        latest_commit_info, _ = run_command("git log -1 --stat")
+        if latest_commit_info:
+            print("[ℹ] 最近一次提交的详细信息：")
+            print(latest_commit_info)
+        else:
+            print("[ℹ] 无法获取最近一次提交的详细信息。")
+
         print(f"[ℹ] 本次提交包含的文件数量：{committed_files_count} 个")
     else:
         print("[✔] 推送成功！但没有返回任何详细信息。")
