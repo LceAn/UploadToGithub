@@ -148,6 +148,11 @@ def git_update(commit_message, upload_all):
         print(f"[✘] 提交失败：{commit_error}")
         return
 
+    # 获取提交的文件数量
+    committed_files, _ = run_command("git diff --cached --name-only")
+    committed_files_list = committed_files.splitlines() if committed_files else []
+    committed_files_count = len(committed_files_list)
+
     # 显示提交后的暂存区状态
     print_divider("-", 40)
     print("提交后的暂存区文件：")
@@ -163,6 +168,7 @@ def git_update(commit_message, upload_all):
     elif push_result:
         print("[✔] 推送成功！详细信息如下：")
         print(push_result)
+        print(f"[ℹ] 本次提交包含的文件数量：{committed_files_count} 个")
     else:
         print("[✔] 推送成功！但没有返回任何详细信息。")
 
