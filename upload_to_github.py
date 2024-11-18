@@ -4,10 +4,12 @@
 # @File : upload_to_github.py
 # @Software : PyCharm
 
+import os
 import subprocess
 import requests
 from prettytable import PrettyTable
 from colorama import Fore, Style, init
+
 
 # 初始化 colorama（只在 Windows 上需要）
 init(autoreset=True)
@@ -23,7 +25,7 @@ class Config:
     end = Style.RESET_ALL
 
     # 本地版本信息
-    local_version = 'v1.1.0'
+    local_version = 'v1.2.0'
     version_info = f"{white}{{{red}{local_version} #dev{white}}}"
     repo_api_url = "https://api.github.com/repos/LceAn/UploadToGithub/releases/latest"
 
@@ -133,6 +135,27 @@ def check_remote_repository():
         exit(1)
     Config.print_status("远程仓库配置检查通过。", "info")
 
+def exclude_script(script_name):
+    """排除当前脚本文件"""
+    print(f"[ ! ] 正在排除脚本文件：{script_name}")
+    current_path = os.getcwd()
+    script_path = os.path.join(current_path, script_name)
+
+    # 检查是否需要将脚本添加到 .gitignore
+    if not os.path.exists(".gitignore"):
+        with open(".gitignore", "w") as gitignore_file:
+            gitignore_file.write(f"{script_name}\n")
+        print(f"[✔] 创建了 .gitignore 文件，并添加了 {script_name}")
+    else:
+        with open(".gitignore", "r") as gitignore_file:
+            lines = gitignore_file.readlines()
+        if script_name not in [line.strip() for line in lines]:
+            with open(".gitignore", "a") as gitignore_file:
+                gitignore_file.write(f"{script_name}\n")
+            print(f"[✔] 将 {script_name} 添加到 .gitignore 文件中")
+
+    # 确保脚本文件未被暂存
+    run_command(f"git reset {script_path}")
 
 def get_git_info():
     """获取并返回所有 Git 信息，组成一个大的表格。"""
@@ -217,8 +240,12 @@ def check_staged_files():
         print("  [✘] 暂存区中没有文件。")
 
 
-def git_update(commit_message, upload_all):
+def git_update(commit_message, upload_all, script_name):
     """添加、提交并推送更改到GitHub仓库。"""
+
+    # 排除当前脚本
+    exclude_script(script_name)
+    
     # 添加更改
     print_divider("-", 40)
     if upload_all:
@@ -271,6 +298,9 @@ def git_update(commit_message, upload_all):
 
 
 if __name__ == "__main__":
+    # 当前脚本名称
+    script_name = "upload_to_github.py"
+    
     try:
         # 初始化占位符内容
         script_function = "Git 操作自动化脚本"
@@ -315,7 +345,7 @@ if __name__ == "__main__":
         check_staged_files()
 
         # 提交并推送更改
-        git_update(commit_message, upload_all)
+        git_update(commit_message, upload_all, script_name)
         print_divider()
     except Exception as e:
         Config.print_status(f"发生严重错误，程序终止: {e}", 'error')
