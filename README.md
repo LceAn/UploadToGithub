@@ -1,139 +1,313 @@
-# Upload to GitHub Script
+# UploadToGithub - Git 自动化上传工具
 
-## 简介
+> 🚀 一键完成 Git 添加、提交、推送操作 | 智能检查 | 版本检测 | 自动排除
 
-`upload_to_github.py` 是一个用于自动化 Git 操作的 Python 脚本。它可以帮助用户在本地 Git 仓库中快速地添加、提交、并推送更改到远程 GitHub 仓库。同时，脚本具备一些基本的异常处理功能，如检查 Git 登录状态、检查仓库配置等，确保在操作之前用户环境正确。
+[![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)](https://github.com/LceAn/UploadToGithub/releases)
+[![Python](https://img.shields.io/badge/python-3.6+-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://github.com/LceAn/UploadToGithub/blob/main/LICENSE)
 
-## 功能特性
+---
 
-- **Git 仓库信息汇总**：通过表格显示当前仓库的状态，包括分支状态、暂存区状态、远程仓库信息等。
-- **Git 登录状态检查**：在执行操作前自动检查是否已配置 Git 用户名和邮箱，确保 Git 操作正常。
-- **仓库状态检查**：自动检测当前目录是否为 Git 仓库，如果不是则提示用户并退出脚本。
-- **远程仓库配置检查**：检查是否配置了远程仓库，如果没有配置远程仓库，脚本将退出并提示用户。
-- **自动化 Git 操作**：可以自动添加、提交并推送更改到远程仓库，帮助用户简化 Git 操作流程。
-- **用户友好的退出功能**：在输入提交信息时，用户可以输入 `q` 来退出脚本，方便用户中断操作。
+## 📖 简介
 
-## 使用方法
+`upload_to_github.py` 是一个功能强大的 Git 自动化上传工具，帮助你快速完成代码的添加、提交和推送操作。具备智能检查、版本检测、文件排除等功能，让 Git 操作更高效、更安全。
 
-### 前提条件
+**适用场景：**
+- ✅ 频繁提交代码的开发者
+- ✅ 需要批量上传项目的团队
+- ✅ 想要简化 Git 流程的初学者
+- ✅ 需要标准化提交流程的项目
 
-1. **安装 Python**：确保本地已安装 Python 3.x 版本。
-2. **安装依赖**：运行以下命令安装 `prettytable` 库：
-   ```bash
-   pip install prettytable
-   ```
-3. **Git 环境配置**：确保本地 Git 已正确配置用户名和邮箱。如果没有配置，可以运行以下命令：
-   ```bash
-   git config --global user.name "Your Name"
-   git config --global user.email "youremail@example.com"
-   ```
-4. **远程仓库配置**：确保本地仓库已配置远程仓库。可以运行以下命令进行检查：
-   ```bash
-   git remote -v
-   ```
-   如果没有远程仓库配置，可以通过以下命令添加：
-   ```bash
-   git remote add origin https://github.com/LceAn/UploadToGithub.git
-   ```
+---
 
-### 使用步骤
+## ✨ 功能特性
 
-1. **克隆或进入本地 Git 仓库**：
-   ```bash
-   git clone [https://github.com/user/repo.git](https://github.com/LceAn/UploadToGithub.git)
-   cd UploadToGithub
-   ```
-   
-2. **运行脚本**：
-   ```bash
-   python3 upload_to_github.py
-   ```
-   
-3. **输入提交信息**：
-   - 根据提示输入提交信息，例如 "修复了登录页面的错误"。如果希望退出脚本，可以输入 `q`。
+### 🎯 核心功能
 
-4. **查看输出结果**：
-   - 脚本将显示当前仓库的状态，并进行添加、提交和推送操作。操作完成后，会提示推送结果。
+| 功能 | 说明 |
+|------|------|
+| **智能检查** | 自动检查 Git 安装、配置、仓库状态、远程仓库 |
+| **版本检测** | 自动检测 GitHub 最新版本，提示更新 |
+| **文件排除** | 自动排除脚本自身、缓存文件、敏感文件等 |
+| **状态展示** | 美观的表格展示仓库状态、暂存区、工作区变更 |
+| **双模式上传** | 支持仅上传变更 / 上传全部（包括删除） |
+| **错误处理** | 完善的异常捕获和友好的错误提示 |
 
-### 示例
+### 🆕 v2.0.0 新增
+
+- 🎨 全新 UI 界面，更清晰的视觉展示
+- 🔧 代码重构，采用面向对象设计
+- 📦 支持更多排除文件类型（.pyc, __pycache__, .env, *.log）
+- ⚡ 优化命令执行，增加超时保护
+- 📊 增强状态展示，区分暂存区/工作区/未跟踪文件
+- 🛡️ 更完善的前置检查和错误处理
+
+---
+
+## 🚀 快速开始
+
+### 前置要求
+
+1. **Python 3.6+**
+2. **Git 已安装并配置**
+
+### 安装依赖
+
+```bash
+pip install prettytable colorama requests
+```
+
+或使用 `requirements.txt`：
+
+```bash
+pip install -r requirements.txt
+```
+
+### 配置 Git
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "youremail@example.com"
+```
+
+### 使用方法
+
+#### 方式一：克隆仓库
+
+```bash
+git clone https://github.com/LceAn/UploadToGithub.git
+cd UploadToGithub
+python3 upload_to_github.py
+```
+
+#### 方式二：放入现有项目
+
+```bash
+# 将脚本复制到你的项目目录
+cp upload_to_github.py /path/to/your/project/
+cd /path/to/your/project/
+python3 upload_to_github.py
+```
+
+---
+
+## 📋 使用示例
+
+### 基础使用
 
 ```bash
 $ python3 upload_to_github.py
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-+----------------------------------------------------+
-|                Git 仓库信息汇总                    |
-+-----------------+----------------------------------+
-| Git 版本        | git version 2.39.3 (Apple Git-146) |
-| 当前状态        | On branch main                    |
-|                 | Your branch is up to date with    |
-|                 | 'origin/main'.                    |
-| 暂存区中的文件  | upload_to_github.py               |
-| 当前Git用户名   | Your Name                         |
-| 当前Git用户邮箱 | youremail@example.com             |
-| 远程仓库信息    | origin https://github.com/user/repo.git (fetch) |
-|                 | origin https://github.com/user/repo.git (push)  |
-+-----------------+----------------------------------+
+
+╔══════════════════════════════════════════════════════════╗
+║  UploadToGithub - Git 自动化上传工具                     ║
+║  Git 操作自动化脚本                                       ║
+╠══════════════════════════════════════════════════════════╣
+║  版本：v2.0.0                                            ║
+║  作者：LceAn                                             ║
+║  更新：2026-03-06 09:57:00                               ║
+╚══════════════════════════════════════════════════════════╝
+
+[ + ] Git 已安装：git version 2.39.3
+[ + ] Git 已配置：Your Name <youremail@example.com>
+[ + ] 当前目录是 Git 仓库
+[ + ] 远程仓库已配置
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-请输入提交信息（输入q退出）：修复了README文件中的拼写错误
+📊 Git 仓库信息汇总
++-----------------+----------------------------------+
+| 项              | 状态                             |
++-----------------+----------------------------------+
+| Git 版本        | git version 2.39.3               |
+| 当前分支        | main                             |
+| 远程仓库        | https://github.com/LceAn/...     |
+| 暂存区文件      | README.md                        |
+| 工作区变更      | upload_to_github.py              |
+| Git 用户        | Your Name <youremail@example.com>|
++-----------------+----------------------------------+
 
---------------------------------------------------
-暂存区中的文件：
-  [✔] upload_to_github.py
---------------------------------------------------
-[ℹ] 正在添加所有更改...
---------------------------------------------------
-[ℹ] 正在提交更改，提交信息：修复了README文件中的拼写错误
---------------------------------------------------
-提交后的暂存区文件：
-  [✘] 暂存区中没有文件。
---------------------------------------------------
-[ℹ] 正在推送更改到远程仓库...
-[✔] 推送成功！详细信息如下：
-...
---------------------------------------------------
+请选择上传类型：
+  1 - 仅上传变更文件（推荐）
+  2 - 上传全部文件（包括删除的文件）
+
+输入选项 (1/2) [默认:1]: 1
+
+请输入提交信息（输入 q 退出）：
+> 优化了脚本结构和 UI
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ℹ ] 正在添加变更文件...
+[ ℹ ] 正在提交：优化了脚本结构和 UI
+[ ✔ ] 提交成功
+[ ℹ ] 正在推送到远程仓库...
+[ ✔ ] 推送成功
+[ ℹ ] 最近提交：abc1234 优化了脚本结构和 UI
+[ ✔ ] 本次提交包含 2 个文件
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎉 所有操作完成！
 ```
 
-## 错误处理
+### 高级用法
 
-### 常见错误及解决方法
+#### 自动排除文件
 
-1. **未配置 Git 用户名和邮箱**：
-   - 错误信息：`[✘] Git 未配置用户名或邮箱，请先配置后再运行脚本。`
-   - 解决方法：运行以下命令配置 Git 用户名和邮箱：
-     ```bash
-     git config --global user.name "Your Name"
-     git config --global user.email "youremail@example.com"
-     ```
+脚本会自动创建/更新 `.gitignore`，排除以下文件：
 
-2. **当前目录不是 Git 仓库**：
-   - 错误信息：`[✘] 当前目录不是一个Git仓库，请先初始化仓库或切换到Git仓库目录后再运行脚本。`
-   - 解决方法：确保当前目录为 Git 仓库，可以使用以下命令初始化 Git 仓库：
-     ```bash
-     git init
-     ```
+```
+upload_to_github.py
+.DS_Store
+*.pyc
+__pycache__
+.env
+*.log
+```
 
-3. **未配置远程仓库**：
-   - 错误信息：`[✘] 当前Git仓库没有配置远程仓库，请先添加远程仓库再运行脚本。`
-   - 解决方法：添加远程仓库：
-     ```bash
-     git remote add origin https://github.com/LceAn/UploadToGithub.git
-     ```
+#### 版本检查
 
-## 版本历史
+每次启动自动检查 GitHub 最新版本：
 
-- **v1.0.0**
-  - 初始版本，包含基本的 Git 自动化操作功能、异常处理和用户友好的退出功能。
-- **v1.1.0**
-  - 新增开头ASCII字符动画、版本检测、输出格式统一。
-- **v1.2.0**
-  - 修订推送更新时排除该脚本。
+```
+[ ! ] 发现新版本：v2.1.0，当前版本：v2.0.0
+[ ℹ ] 请及时更新：git pull origin main
+```
 
-## 贡献
+---
 
-如果你发现了Bug或者有新的功能需求，欢迎提交 [Issue](https://github.com/user/repo/issues) 或者发送 [Pull Request](https://github.com/user/repo/pulls)。
+## ⚙️ 配置说明
 
-## 许可
+### 自定义排除文件
 
-本项目遵循 [MIT 许可证](https://opensource.org/licenses/MIT)。
+编辑脚本中的 `Config.EXCLUDE_FILES`：
 
+```python
+class Config:
+    # 排除文件列表
+    EXCLUDE_FILES = [
+        'upload_to_github.py',  # 脚本自身
+        '.DS_Store',            # macOS 系统文件
+        '*.pyc',                # Python 缓存
+        '__pycache__',          # Python 缓存目录
+        '.env',                 # 环境变量文件
+        '*.log'                 # 日志文件
+    ]
+```
+
+### 修改仓库信息
+
+```python
+class Config:
+    REPO_OWNER = 'LceAn'
+    REPO_NAME = 'UploadToGithub'
+    AUTHOR = 'Your Name'
+```
+
+---
+
+## 🔧 常见问题
+
+### 1. Git 未配置用户名或邮箱
+
+```bash
+[ - ] Git 未配置用户名或邮箱，请先配置后再运行脚本。
+[ ℹ ] git config --global user.name "Your Name"
+[ ℹ ] git config --global user.email "youremail@example.com"
+```
+
+**解决：** 按提示运行配置命令即可。
+
+### 2. 当前目录不是 Git 仓库
+
+```bash
+[ - ] 当前目录不是 Git 仓库
+[ ℹ ] git init  # 初始化仓库
+[ ℹ ] git clone <url>  # 克隆仓库
+```
+
+**解决：** 初始化或克隆仓库。
+
+### 3. 未配置远程仓库
+
+```bash
+[ - ] 未配置远程仓库
+[ ℹ ] git remote add origin https://github.com/user/repo.git
+```
+
+**解决：** 添加远程仓库地址。
+
+### 4. 推送失败
+
+```bash
+[ - ] 推送失败：Permission denied (publickey)
+```
+
+**解决：** 检查 SSH 密钥或改用 HTTPS 方式。
+
+---
+
+## 📦 依赖说明
+
+| 依赖 | 版本 | 用途 |
+|------|------|------|
+| `prettytable` | >=2.0 | 表格展示 |
+| `colorama` | >=0.4 | 跨平台颜色支持 |
+| `requests` | >=2.25 | HTTP 请求（版本检测） |
+
+---
+
+## 📝 版本历史
+
+### v2.0.0 (2026-03-06) 🎉
+- 🎨 全新 UI 设计，更清晰的视觉展示
+- 🔧 代码重构，采用面向对象设计
+- 📦 扩展排除文件列表
+- ⚡ 增加命令执行超时保护
+- 📊 增强状态展示功能
+- 🛡️ 完善错误处理机制
+
+### v1.2.0
+- 修订推送时排除脚本自身
+
+### v1.1.0
+- 新增 ASCII 字符动画
+- 版本检测功能
+- 输出格式统一
+
+### v1.0.0
+- 初始版本
+- 基本 Git 自动化操作
+- 异常处理功能
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 或 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+---
+
+## 📄 许可证
+
+本项目采用 [MIT 许可证](https://opensource.org/licenses/MIT)
+
+---
+
+## 📬 联系方式
+
+- **作者：** LceAn
+- **仓库：** https://github.com/LceAn/UploadToGithub
+- **问题反馈：** https://github.com/LceAn/UploadToGithub/issues
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对你有帮助，请给个 Star！**
+
+Made with ❤️ by LceAn
+
+</div>
