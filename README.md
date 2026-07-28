@@ -311,3 +311,23 @@ class Config:
 Made with ❤️ by LceAn
 
 </div>
+
+---
+
+## 仓库结构
+
+- `LICENSE`
+- `README.md`
+- `UPDATE_SUMMARY.md`
+- `requirements.txt`
+- `upload_to_github.py`
+
+<!-- repo-readme-standard:v1 -->
+## 仓库维护信息
+
+- 项目类型：其他
+- 当前状态：待复盘
+- 可见性：public
+- 维护节奏：按需要复盘
+- 相关仓库：无已确认的重复仓库关系；如需合并请先核对功能边界。
+- 维护边界：普通文档和代码更新可直接提交；归档、删除、历史重写或强制推送需单独确认。
