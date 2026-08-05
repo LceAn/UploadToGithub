@@ -13,10 +13,13 @@ UploadToGithub - Git 自动化上传工具
 import os
 import sys
 import subprocess
+import re
 import requests
+from fnmatch import fnmatch
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Tuple, List
+from typing import Optional, Sequence, Tuple, List
+from urllib.parse import urlsplit, urlunsplit
 from prettytable import PrettyTable
 from colorama import Fore, Style, init
 
@@ -111,12 +114,12 @@ def print_divider(symbol: str = "━", length: int = 60) -> None:
     print(symbol * length)
 
 
-def run_command(command: str, capture: bool = True) -> Tuple[Optional[str], Optional[str]]:
+def run_command(command: Sequence[str], capture: bool = True) -> Tuple[Optional[str], Optional[str]]:
     """
     运行 shell 命令
     
     Args:
-        command: 要执行的命令
+        command: 命令及参数列表
         capture: 是否捕获输出
         
     Returns:
@@ -124,17 +127,19 @@ def run_command(command: str, capture: bool = True) -> Tuple[Optional[str], Opti
     """
     try:
         result = subprocess.run(
-            command,
-            shell=True,
+            list(command),
             capture_output=capture,
             text=True,
-            timeout=30
+            timeout=30,
+            check=False,
         )
         if result.returncode != 0:
-            return None, result.stderr.strip()
-        return result.stdout.strip(), None
+            error = result.stderr.strip() if result.stderr else f"命令退出码：{result.returncode}"
+            return None, error
+        output = result.stdout.strip() if result.stdout else ""
+        return output, None
     except subprocess.TimeoutExpired:
-        return None, f"命令执行超时：{command}"
+        return None, "命令执行超时"
     except Exception as e:
         return None, str(e)
 
@@ -145,7 +150,7 @@ def run_command(command: str, capture: bool = True) -> Tuple[Optional[str], Opti
 
 def check_git_installed() -> bool:
     """检查 Git 是否已安装"""
-    git_version, error = run_command("git --version")
+    git_version, error = run_command(["git", "--version"])
     if error:
         print(Colors.error("Git 未安装，请先安装 Git"))
         print(Colors.info_msg("macOS: brew install git"))
@@ -157,8 +162,8 @@ def check_git_installed() -> bool:
 
 def check_git_config() -> bool:
     """检查 Git 用户配置"""
-    user_name, _ = run_command("git config user.name")
-    user_email, _ = run_command("git config user.email")
+    user_name, _ = run_command(["git", "config", "user.name"])
+    user_email, _ = run_command(["git", "config", "user.email"])
     
     if not user_name or not user_email:
         print(Colors.error("Git 未配置用户名或邮箱"))
@@ -172,7 +177,7 @@ def check_git_config() -> bool:
 
 def check_git_repository() -> bool:
     """检查当前目录是否是 Git 仓库"""
-    git_dir, error = run_command("git rev-parse --is-inside-work-tree")
+    git_dir, error = run_command(["git", "rev-parse", "--is-inside-work-tree"])
     if error:
         print(Colors.error("当前目录不是 Git 仓库"))
         print(Colors.info_msg("git init  # 初始化仓库"))
@@ -184,8 +189,8 @@ def check_git_repository() -> bool:
 
 def check_remote_repository() -> bool:
     """检查远程仓库配置"""
-    remotes, error = run_command("git remote -v")
-    if not remotes:
+    remote_url, error = run_command(["git", "remote", "get-url", "origin"])
+    if error or not remote_url:
         print(Colors.error("未配置远程仓库"))
         print(Colors.info_msg("git remote add origin https://github.com/user/repo.git"))
         return False
@@ -200,7 +205,7 @@ def check_for_updates() -> None:
         response = requests.get(Config.REPO_API_URL, timeout=5)
         if response.status_code == 200:
             latest_version = response.json().get("tag_name", "")
-            if latest_version and Config.LOCAL_VERSION < latest_version:
+            if latest_version and is_newer_version(latest_version, Config.LOCAL_VERSION):
                 print(Colors.warning(f"发现新版本：{latest_version}，当前版本：{Config.LOCAL_VERSION}"))
                 print(Colors.info_msg("请及时更新：git pull origin main"))
             else:
@@ -209,6 +214,36 @@ def check_for_updates() -> None:
             print(Colors.warning("无法获取版本信息"))
     except requests.exceptions.RequestException as e:
         print(Colors.warning(f"检查更新失败：{e}"))
+
+
+def version_parts(value: str) -> Tuple[int, ...]:
+    """将 v2.10.1 这类标签转换为可比较的数字元组。"""
+    parts = [int(part) for part in re.findall(r"\d+", value)]
+    while len(parts) > 1 and parts[-1] == 0:
+        parts.pop()
+    return tuple(parts)
+
+
+def is_newer_version(candidate: str, current: str) -> bool:
+    candidate_parts = version_parts(candidate)
+    current_parts = version_parts(current)
+    return bool(candidate_parts and candidate_parts > current_parts)
+
+
+def sanitize_remote_url(remote_url: str) -> str:
+    """移除 HTTPS 远端地址中可能包含的凭据。"""
+    if "://" not in remote_url:
+        return remote_url
+    parsed = urlsplit(remote_url)
+    hostname = parsed.hostname or ""
+    if parsed.port:
+        hostname = f"{hostname}:{parsed.port}"
+    return urlunsplit((parsed.scheme, hostname, parsed.path, parsed.query, parsed.fragment))
+
+
+def is_excluded(path: str) -> bool:
+    parts = Path(path).parts
+    return any(fnmatch(path, pattern) or pattern in parts for pattern in Config.EXCLUDE_FILES)
 
 
 # ============================================================================
@@ -224,38 +259,38 @@ def get_git_info_table() -> PrettyTable:
     table.max_width = 60
     
     # Git 版本
-    git_version, _ = run_command("git --version")
+    git_version, _ = run_command(["git", "--version"])
     table.add_row(["Git 版本", git_version])
     
     # 当前分支
-    branch, _ = run_command("git branch --show-current")
+    branch, _ = run_command(["git", "branch", "--show-current"])
     table.add_row(["当前分支", branch])
     
     # 远程仓库
-    remote_url, _ = run_command("git remote get-url origin")
+    remote_url, _ = run_command(["git", "remote", "get-url", "origin"])
     if remote_url:
-        table.add_row(["远程仓库", remote_url])
+        table.add_row(["远程仓库", sanitize_remote_url(remote_url)])
     
     # 暂存区文件
-    staged_files, _ = run_command("git diff --cached --name-only")
+    staged_files, _ = run_command(["git", "diff", "--cached", "--name-only"])
     staged_list = staged_files.splitlines() if staged_files else []
     table.add_row(["暂存区文件", "\n".join(staged_list) if staged_list else "无"])
     
     # 工作区变更
-    changed_files, _ = run_command("git diff --name-only")
+    changed_files, _ = run_command(["git", "diff", "--name-only"])
     changed_list = changed_files.splitlines() if changed_files else []
     table.add_row(["工作区变更", "\n".join(changed_list) if changed_list else "无"])
     
     # 未跟踪文件
-    untracked, _ = run_command("git ls-files --others --exclude-standard")
+    untracked, _ = run_command(["git", "ls-files", "--others", "--exclude-standard"])
     untracked_list = untracked.splitlines() if untracked else []
     # 排除配置中的文件
-    untracked_list = [f for f in untracked_list if f not in Config.EXCLUDE_FILES]
+    untracked_list = [f for f in untracked_list if not is_excluded(f)]
     table.add_row(["未跟踪文件", "\n".join(untracked_list[:5]) + ("\n..." if len(untracked_list) > 5 else "") if untracked_list else "无"])
     
     # 用户信息
-    user_name, _ = run_command("git config user.name")
-    user_email, _ = run_command("git config user.email")
+    user_name, _ = run_command(["git", "config", "user.name"])
+    user_email, _ = run_command(["git", "config", "user.email"])
     table.add_row(["Git 用户", f"{user_name} <{user_email}>"])
     
     return table
@@ -311,10 +346,10 @@ def git_add(upload_all: bool = False) -> bool:
     """添加文件到暂存区"""
     if upload_all:
         print(Colors.info_msg("正在添加所有文件（包括删除）..."))
-        _, error = run_command("git add -A")
+        _, error = run_command(["git", "add", "-A"])
     else:
         print(Colors.info_msg("正在添加变更文件..."))
-        _, error = run_command("git add .")
+        _, error = run_command(["git", "add", "--ignore-removal", "."])
     
     if error:
         print(Colors.error(f"添加失败：{error}"))
@@ -329,7 +364,7 @@ def git_commit(message: str) -> bool:
         return False
     
     print(Colors.info_msg(f"正在提交：{message}"))
-    _, error = run_command(f'git commit -m "{message}"')
+    _, error = run_command(["git", "commit", "-m", message])
     
     if error:
         print(Colors.error(f"提交失败：{error}"))
@@ -342,7 +377,7 @@ def git_commit(message: str) -> bool:
 def git_push() -> bool:
     """推送到远程仓库"""
     print(Colors.info_msg("正在推送到远程仓库..."))
-    output, error = run_command("git push")
+    output, error = run_command(["git", "push"])
     
     if error:
         print(Colors.error(f"推送失败：{error}"))
@@ -351,7 +386,7 @@ def git_push() -> bool:
     if output:
         print(Colors.success("推送成功"))
         # 显示最近提交
-        commit_info, _ = run_command("git log -1 --oneline")
+        commit_info, _ = run_command(["git", "log", "-1", "--oneline"])
         if commit_info:
             print(Colors.info_msg(f"最近提交：{commit_info}"))
     return True
@@ -367,9 +402,12 @@ def git_upload(commit_message: str, upload_all: bool = False) -> bool:
         return False
     
     # 显示暂存区状态
-    staged_files, _ = run_command("git diff --cached --name-only")
+    staged_files, _ = run_command(["git", "diff", "--cached", "--name-only"])
     staged_list = staged_files.splitlines() if staged_files else []
     show_file_status(staged_list, "staged")
+    if not staged_list:
+        print(Colors.warning("没有可提交的变更"))
+        return False
     
     # 提交
     if not git_commit(commit_message):
